@@ -1,7 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const String _urlBase = 'http://10.0.2.2:8000/api'; // emulador Android → localhost
+// IP de la PC donde corre el backend Django en la red WiFi local.
+// Celular/emulador y PC deben estar en la misma red. Si cambia la IP
+// de la PC (ipconfig), actualizar este valor.
+const String _urlBase = 'http://192.168.1.7:8000/api';
 
 Dio crearClienteHttp() {
   final dio = Dio(BaseOptions(

@@ -10,16 +10,25 @@ void main() {
   runApp(const ProviderScope(child: AppSivic()));
 }
 
-class AppSivic extends ConsumerWidget {
+class AppSivic extends ConsumerStatefulWidget {
   const AppSivic({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AppSivic> createState() => _AppSivicState();
+}
+
+class _AppSivicState extends ConsumerState<AppSivic> {
+  @override
+  void initState() {
+    super.initState();
+    // Carga sesión guardada al iniciar (una sola vez)
+    Future.microtask(() => ref.read(authProvider.notifier).cargarSesionGuardada());
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final modoTema = ref.watch(temaProvider);
     final router   = ref.watch(routerProvider);
-
-    // Carga sesión guardada al iniciar
-    ref.read(authProvider.notifier).cargarSesionGuardada();
 
     return MaterialApp.router(
       title: 'SIVIC Guardia',

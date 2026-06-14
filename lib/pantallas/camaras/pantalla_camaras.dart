@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:video_player/video_player.dart';
 import '../../nucleo/constantes/colores.dart';
 import '../../nucleo/proveedores/camaras_proveedor.dart';
+import '../../nucleo/proveedores/auth_proveedor.dart';
+import '../../nucleo/proveedores/shell_proveedor.dart';
 import '../../compartido/modelos/camara.modelo.dart';
 
 class PantallaCamaras extends ConsumerStatefulWidget {
@@ -23,8 +25,13 @@ class _PantallaCamarasState extends ConsumerState<PantallaCamaras> {
     return Scaffold(
       backgroundColor: kFondoOscuro,
       appBar: AppBar(
+        leading: Padding(padding: const EdgeInsets.all(8), child: Image.asset('assets/icon/icon.png')),
         title: const Text('Panel de Cámaras'),
         actions: [
+          if (ref.watch(authProvider).usuario?.esAdmin ?? false)
+            IconButton(icon: const Icon(Icons.menu), onPressed: () => ref.read(shellScaffoldKeyProvider).currentState?.openDrawer())
+          else
+            IconButton(icon: const Icon(Icons.logout), tooltip: 'Cerrar sesión', onPressed: () => ref.read(authProvider.notifier).cerrarSesion()),
           if (_camaraFoco != null)
             IconButton(icon: const Icon(Icons.close), onPressed: () => setState(() => _camaraFoco = null)),
           _BotonLayout(columnas: 1, actual: _columnas, onTap: () => setState(() { _columnas = 1; _camaraFoco = null; })),
@@ -39,21 +46,25 @@ class _PantallaCamarasState extends ConsumerState<PantallaCamaras> {
         data: (camaras) {
           final lista = _camaraFoco != null ? [_camaraFoco!] : camaras;
           final cols  = _camaraFoco != null ? 1 : _columnas;
-          return GridView.builder(
-            padding: const EdgeInsets.all(6),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: cols,
-              mainAxisSpacing: 6,
-              crossAxisSpacing: 6,
-              childAspectRatio: 16 / 9,
-            ),
-            itemCount: lista.length,
-            itemBuilder: (ctx, i) => _CeldaCamara(
-              camara: lista[i],
-              seleccionada: _camaraFoco?.camaraId == lista[i].camaraId,
-              onTap: () => setState(() {
-                _camaraFoco = _camaraFoco?.camaraId == lista[i].camaraId ? null : lista[i];
-              }),
+          return RefreshIndicator(
+            color: kPrimario,
+            onRefresh: () => ref.refresh(camarasProvider.future),
+            child: GridView.builder(
+              padding: const EdgeInsets.all(6),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: cols,
+                mainAxisSpacing: 6,
+                crossAxisSpacing: 6,
+                childAspectRatio: 16 / 9,
+              ),
+              itemCount: lista.length,
+              itemBuilder: (ctx, i) => _CeldaCamara(
+                camara: lista[i],
+                seleccionada: _camaraFoco?.camaraId == lista[i].camaraId,
+                onTap: () => setState(() {
+                  _camaraFoco = _camaraFoco?.camaraId == lista[i].camaraId ? null : lista[i];
+                }),
+              ),
             ),
           );
         },

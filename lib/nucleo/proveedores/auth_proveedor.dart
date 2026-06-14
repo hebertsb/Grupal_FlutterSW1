@@ -18,14 +18,23 @@ class EstadoAuth {
 
 class AuthNotifier extends StateNotifier<EstadoAuth> {
   final Dio _http;
-  AuthNotifier(this._http) : super(const EstadoAuth());
+  AuthNotifier(this._http) : super(const EstadoAuth()) {
+    _http.interceptors.add(InterceptorsWrapper(
+      onError: (error, handler) {
+        if (error.response?.statusCode == 401) {
+          cerrarSesion();
+        }
+        return handler.next(error);
+      },
+    ));
+  }
 
   Future<void> cargarSesionGuardada() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('sivic_token');
     if (token == null) return;
     try {
-      final resp = await _http.get('/auth/perfil/');
+      final resp = await _http.get('/auth/yo/');
       state = EstadoAuth(usuario: Usuario.fromJson(resp.data as Map<String, dynamic>));
     } catch (_) {
       await prefs.remove('sivic_token');
@@ -38,12 +47,49 @@ class AuthNotifier extends StateNotifier<EstadoAuth> {
       final resp = await _http.post('/auth/login/', data: {'email': email, 'password': password});
       final datos = resp.data as Map<String, dynamic>;
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('sivic_token', datos['token'] as String);
+      await prefs.setString('sivic_token', datos['access'] as String);
       state = EstadoAuth(usuario: Usuario.fromJson(datos['usuario'] as Map<String, dynamic>));
       return true;
     } on DioException catch (e) {
-      final msg = (e.response?.data as Map?)?['detail'] ?? 'Error de conexión';
+      final data = e.response?.data;
+      final msg = data is Map ? (data['error'] ?? data['detail'] ?? 'Error de conexión') : 'Error de conexión';
       state = EstadoAuth(error: msg.toString());
+      return false;
+    } catch (e) {
+      state = EstadoAuth(error: 'Error inesperado: $e');
+      return false;
+    }
+  }
+
+  void limpiarError() {
+    if (state.error != null) state = EstadoAuth(usuario: state.usuario);
+  }
+
+  Future<bool> registrarGuardia({
+    required String nombre,
+    required String email,
+    required String password,
+  }) async {
+    state = const EstadoAuth(cargando: true);
+    try {
+      final resp = await _http.post('/auth/registro/', data: {
+        'nombre':   nombre,
+        'email':    email,
+        'password': password,
+        'rol':      'guardia',
+      });
+      final datos = resp.data as Map<String, dynamic>;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('sivic_token', datos['access'] as String);
+      state = EstadoAuth(usuario: Usuario.fromJson(datos['usuario'] as Map<String, dynamic>));
+      return true;
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      final msg  = data is Map ? (data['error'] ?? data['detail'] ?? 'Error al registrar') : 'Error al registrar';
+      state = EstadoAuth(error: msg.toString());
+      return false;
+    } catch (e) {
+      state = EstadoAuth(error: 'Error inesperado: $e');
       return false;
     }
   }

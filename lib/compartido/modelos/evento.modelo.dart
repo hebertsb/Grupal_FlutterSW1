@@ -23,8 +23,8 @@ class Evento {
 
   factory Evento.fromJson(Map<String, dynamic> json) => Evento(
     eventoId:             json['evento_id'] as int,
-    camaraId:             json['camara_id'] as int,
-    reglaId:              json['regla_id'] as int,
+    camaraId:             json['camara'] as int,
+    reglaId:              json['regla'] as int,
     confianzaIa:          (json['confianza_ia'] as num).toDouble(),
     estado:               json['estado'] as String,
     imagenEvidenciaPath:  json['imagen_evidencia_path'] as String?,

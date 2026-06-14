@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../nucleo/constantes/colores.dart';
 import '../../nucleo/proveedores/eventos_proveedor.dart';
 import '../../nucleo/proveedores/auth_proveedor.dart';
+import '../../nucleo/proveedores/shell_proveedor.dart';
 import '../../compartido/modelos/evento.modelo.dart';
 
 class PantallaEventos extends ConsumerStatefulWidget {
@@ -29,7 +30,16 @@ class _PantallaEventosState extends ConsumerState<PantallaEventos> {
 
     return Scaffold(
       backgroundColor: kFondoOscuro,
-      appBar: AppBar(title: const Text('Eventos')),
+      appBar: AppBar(
+        leading: Padding(padding: const EdgeInsets.all(8), child: Image.asset('assets/icon/icon.png')),
+        title: const Text('Eventos'),
+        actions: [
+          if (ref.watch(authProvider).usuario?.esAdmin ?? false)
+            IconButton(icon: const Icon(Icons.menu), onPressed: () => ref.read(shellScaffoldKeyProvider).currentState?.openDrawer())
+          else
+            IconButton(icon: const Icon(Icons.logout), tooltip: 'Cerrar sesión', onPressed: () => ref.read(authProvider.notifier).cerrarSesion()),
+        ],
+      ),
       body: Column(
         children: [
           // Filtros
@@ -75,7 +85,7 @@ class _PantallaEventosState extends ConsumerState<PantallaEventos> {
                   ]))
                 : RefreshIndicator(
                     color: kPrimario,
-                    onRefresh: () async => ref.invalidate(eventosProvider),
+                    onRefresh: () => ref.refresh(eventosProvider(_filtro).future),
                     child: ListView.builder(
                       padding: const EdgeInsets.all(8),
                       itemCount: eventos.length,
