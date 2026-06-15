@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 import '../red/cliente_http.dart';
+import '../red/websocket_servicio.dart';
 import '../../compartido/modelos/usuario.modelo.dart';
 
 class EstadoAuth {
@@ -17,8 +18,9 @@ class EstadoAuth {
 }
 
 class AuthNotifier extends StateNotifier<EstadoAuth> {
-  final Dio _http;
-  AuthNotifier(this._http) : super(const EstadoAuth()) {
+  final Dio    _http;
+  final Ref    _ref;
+  AuthNotifier(this._http, this._ref) : super(const EstadoAuth()) {
     _http.interceptors.add(InterceptorsWrapper(
       onError: (error, handler) {
         if (error.response?.statusCode == 401) {
@@ -36,6 +38,7 @@ class AuthNotifier extends StateNotifier<EstadoAuth> {
     try {
       final resp = await _http.get('/auth/yo/');
       state = EstadoAuth(usuario: Usuario.fromJson(resp.data as Map<String, dynamic>));
+      _ref.read(wsProvider.notifier).conectar(token);
     } catch (_) {
       await prefs.remove('sivic_token');
     }
@@ -47,8 +50,10 @@ class AuthNotifier extends StateNotifier<EstadoAuth> {
       final resp = await _http.post('/auth/login/', data: {'email': email, 'password': password});
       final datos = resp.data as Map<String, dynamic>;
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('sivic_token', datos['access'] as String);
+      final token = datos['access'] as String;
+      await prefs.setString('sivic_token', token);
       state = EstadoAuth(usuario: Usuario.fromJson(datos['usuario'] as Map<String, dynamic>));
+      _ref.read(wsProvider.notifier).conectar(token);
       return true;
     } on DioException catch (e) {
       final data = e.response?.data;
@@ -95,13 +100,14 @@ class AuthNotifier extends StateNotifier<EstadoAuth> {
   }
 
   Future<void> cerrarSesion() async {
+    _ref.read(wsProvider.notifier).desconectar();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('sivic_token');
     state = const EstadoAuth();
   }
 }
 
-final httpProvider    = Provider<Dio>((ref) => crearClienteHttp());
-final authProvider    = StateNotifierProvider<AuthNotifier, EstadoAuth>(
-  (ref) => AuthNotifier(ref.read(httpProvider)),
+final httpProvider = Provider<Dio>((ref) => crearClienteHttp());
+final authProvider = StateNotifierProvider<AuthNotifier, EstadoAuth>(
+  (ref) => AuthNotifier(ref.read(httpProvider), ref),
 );

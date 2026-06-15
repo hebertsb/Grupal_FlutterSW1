@@ -31,6 +31,8 @@ dependencies:
   dart_jsonwebtoken: ^2.8.3
   # Formateo fechas
   intl: ^0.19.0
+  # WebSocket
+  web_socket_channel: ^2.4.0
 
 dev_dependencies:
   flutter_test:
