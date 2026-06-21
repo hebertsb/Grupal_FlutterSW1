@@ -8,6 +8,17 @@ import '../../nucleo/proveedores/reglas_proveedor.dart';
 import '../../nucleo/proveedores/usuarios_proveedor.dart';
 import '../../nucleo/proveedores/shell_proveedor.dart';
 
+String _fmtBolivia(String ts) {
+  try {
+    final utc = DateTime.parse(ts).toUtc();
+    final bolivia = utc.subtract(const Duration(hours: 4));
+    return '${bolivia.year}-${bolivia.month.toString().padLeft(2,'0')}-${bolivia.day.toString().padLeft(2,'0')} '
+           '${bolivia.hour.toString().padLeft(2,'0')}:${bolivia.minute.toString().padLeft(2,'0')}';
+  } catch (_) {
+    return ts.length >= 16 ? ts.substring(0, 16).replaceFirst('T', ' ') : ts;
+  }
+}
+
 class PantallaDashboard extends ConsumerWidget {
   const PantallaDashboard({super.key});
 
@@ -69,7 +80,7 @@ class PantallaDashboard extends ConsumerWidget {
                         child: ListTile(
                           leading: Icon(_iconoEstado(e.estado), color: _colorEstado(e.estado)),
                           title: Text(e.reglaNombre ?? 'Regla #${e.reglaId}'),
-                          subtitle: Text('${e.camaraNombre ?? 'Cámara #${e.camaraId}'} · ${e.timestampDeteccion.substring(0, 16).replaceFirst('T', ' ')}'),
+                          subtitle: Text('${e.camaraNombre ?? 'Cámara #${e.camaraId}'} · ${_fmtBolivia(e.timestampDeteccion)}'),
                           trailing: Text(e.estado.replaceAll('_', ' ')),
                           onTap: () => context.go('/eventos'),
                         ),

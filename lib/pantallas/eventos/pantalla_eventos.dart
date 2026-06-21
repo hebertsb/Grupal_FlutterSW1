@@ -6,6 +6,17 @@ import '../../nucleo/proveedores/auth_proveedor.dart';
 import '../../nucleo/proveedores/shell_proveedor.dart';
 import '../../compartido/modelos/evento.modelo.dart';
 
+String _formatearHoraBolivia(String ts) {
+  try {
+    final utc = DateTime.parse(ts).toUtc();
+    final bolivia = utc.subtract(const Duration(hours: 4));
+    return '${bolivia.year}-${bolivia.month.toString().padLeft(2,'0')}-${bolivia.day.toString().padLeft(2,'0')} '
+           '${bolivia.hour.toString().padLeft(2,'0')}:${bolivia.minute.toString().padLeft(2,'0')}';
+  } catch (_) {
+    return ts.length >= 16 ? ts.substring(0, 16).replaceFirst('T', ' ') : ts;
+  }
+}
+
 class PantallaEventos extends ConsumerStatefulWidget {
   const PantallaEventos({super.key});
 
@@ -166,7 +177,7 @@ class _TarjetaEvento extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 4),
-            Text(evento.timestampDeteccion.substring(0, 16).replaceFirst('T', ' '),
+            Text(_formatearHoraBolivia(evento.timestampDeteccion),
               style: const TextStyle(fontSize: 11, color: kTexto2Oscuro)),
 
             if (evento.estado == 'pendiente') ...[

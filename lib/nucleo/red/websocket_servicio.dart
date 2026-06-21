@@ -4,9 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-// URL base del backend — debe coincidir con _urlBase en cliente_http.dart
-// pero con protocolo ws://
-const String _wsBase = 'ws://192.168.1.7:8000';
+const String _wsBase = 'ws://98.93.156.209';
 
 // ── Modelo de alerta recibida por WS ─────────────────────────────────────────
 

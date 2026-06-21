@@ -1,12 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// IP de la PC donde corre el backend Django en la red WiFi local.
-// Celular/emulador y PC deben estar en la misma red. Si cambia la IP
-// de la PC (ipconfig), actualizar este valor.
-const String _urlBase      = 'http://192.168.1.7:8000/api';
-const String urlDjango     = 'http://192.168.1.7:8000';   // base Django sin /api
-const String urlIaServidor = 'http://192.168.1.7:8002';   // servidor FastAPI IA
+const String _urlBase      = 'http://98.93.156.209/api';
+const String urlDjango     = 'http://98.93.156.209';
+const String urlIaServidor = 'http://98.93.156.209/ia-personas';
 
 Dio crearClienteHttp() {
   final dio = Dio(BaseOptions(
