@@ -33,6 +33,10 @@ dependencies:
   intl: ^0.19.0
   # WebSocket
   web_socket_channel: ^2.4.0
+  # Cámara local del dispositivo
+  camera: ^0.11.0
+  # HTTP multipart para enviar frames
+  http: ^1.2.2
 
 dev_dependencies:
   flutter_test:
