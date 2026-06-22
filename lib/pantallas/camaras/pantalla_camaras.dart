@@ -202,12 +202,11 @@ class _CeldaCamaraLocalState extends State<_CeldaCamaraLocal> {
   bool   _analizando = false;
   bool   _disposed   = false;
   Timer? _timer;
+  String? _errorCamara;
 
   int     _conteoPersonas = 0;
   String? _nivel;          // 'normal' | 'sospechoso' | 'critico'
-  bool    _pelea          = false;
-  bool    _perroSuelto    = false;
-  bool    _heces          = false;
+  Set<String> _alertasActivas = <String>{};
 
   @override
   void initState() {
@@ -217,8 +216,19 @@ class _CeldaCamaraLocalState extends State<_CeldaCamaraLocal> {
 
   Future<void> _iniciarCamara() async {
     try {
+      if (mounted) {
+        setState(() {
+          _errorCamara = null;
+          _listo = false;
+        });
+      }
       final camaras = await availableCameras();
-      if (camaras.isEmpty || _disposed) return;
+      if (camaras.isEmpty || _disposed) {
+        if (mounted && !_disposed) {
+          setState(() => _errorCamara = 'No hay cámaras disponibles en el dispositivo');
+        }
+        return;
+      }
       final desc = camaras.firstWhere(
         (c) => c.lensDirection == CameraLensDirection.back,
         orElse: () => camaras.first,
@@ -228,7 +238,13 @@ class _CeldaCamaraLocalState extends State<_CeldaCamaraLocal> {
       if (_disposed || !mounted) return;
       setState(() => _listo = true);
       _timer = Timer.periodic(const Duration(seconds: 2), (_) => _analizarFrame());
-    } catch (_) {}
+    } catch (_) {
+      if (mounted && !_disposed) {
+        setState(() {
+          _errorCamara = 'No se pudo iniciar la cámara local';
+        });
+      }
+    }
   }
 
   Future<void> _analizarFrame() async {
@@ -258,17 +274,13 @@ class _CeldaCamaraLocalState extends State<_CeldaCamaraLocal> {
 
         // alertas es lista de strings: ["merodeo", "personas_peleando", ...]
         final alertas = (body['alertas'] as List<dynamic>?) ?? [];
-        final pelea   = alertas.contains('personas_peleando');
-        final perroSuelto = alertas.contains('perro_sin_correa');
-        final heces   = alertas.contains('heces_detectadas');
+        final alertasSet = alertas.map((a) => a.toString()).toSet();
 
         if (mounted) {
           setState(() {
             _conteoPersonas = personas;
             _nivel          = nivel;
-            _pelea          = pelea;
-            _perroSuelto    = perroSuelto;
-            _heces          = heces;
+            _alertasActivas  = alertasSet;
           });
         }
       }
@@ -295,6 +307,85 @@ class _CeldaCamaraLocalState extends State<_CeldaCamaraLocal> {
     }
   }
 
+  ({String texto, Color color})? _configurarAlerta(String tipo) {
+    switch (tipo) {
+      case 'zona_restringida_persona':
+        return (texto: 'ZONA RESTRINGIDA', color: const Color(0xECD29922));
+      case 'merodeo':
+        return (texto: 'MERODEO DETECTADO', color: const Color(0xECD29922));
+      case 'vehiculo_zona_restringida':
+        return (texto: 'VEHÍCULO EN ZONA RESTRINGIDA', color: const Color(0xECD29922));
+      case 'personas_peleando':
+        return (texto: 'PELEA DETECTADA', color: kPeligro);
+      case 'caida_persona':
+        return (texto: 'CAÍDA DETECTADA', color: kPeligro);
+      case 'intrusion_nocturna':
+        return (texto: 'INTRUSIÓN NOCTURNA', color: const Color(0xEC7C3AED));
+      case 'acceso_fuera_horario':
+        return (texto: 'ACCESO FUERA DE HORARIO', color: const Color(0xEC7C3AED));
+      case 'vehiculo_mal_estacionado':
+        return (texto: 'VEHÍCULO MAL ESTACIONADO', color: const Color(0xECD29922));
+      case 'perro_sin_correa':
+        return (texto: 'MASCOTA SUELTA', color: Colors.orange);
+      case 'heces_detectadas':
+        return (texto: 'HECES DETECTADAS', color: Colors.brown);
+      default:
+        return null;
+    }
+  }
+
+  List<Widget> _bannersAlerta() {
+    final orden = [
+      'personas_peleando',
+      'caida_persona',
+      'intrusion_nocturna',
+      'acceso_fuera_horario',
+      'zona_restringida_persona',
+      'merodeo',
+      'vehiculo_zona_restringida',
+      'vehiculo_mal_estacionado',
+      'perro_sin_correa',
+      'heces_detectadas',
+    ];
+
+    var bottom = 30.0;
+    final widgets = <Widget>[];
+    for (final tipo in orden) {
+      if (!_alertasActivas.contains(tipo)) continue;
+      final config = _configurarAlerta(tipo);
+      if (config == null) continue;
+      widgets.add(
+        Positioned(
+          bottom: bottom,
+          left: 0,
+          right: 0,
+          child: Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+              margin: const EdgeInsets.only(bottom: 4),
+              decoration: BoxDecoration(
+                color: config.color.withAlpha(230),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                config.texto,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        ),
+      );
+      bottom += 30;
+    }
+    return widgets;
+  }
+
   @override
   void dispose() {
     _disposed = true;
@@ -305,14 +396,16 @@ class _CeldaCamaraLocalState extends State<_CeldaCamaraLocal> {
 
   @override
   Widget build(BuildContext context) {
+    final peleando = _alertasActivas.contains('personas_peleando');
+
     return GestureDetector(
       onTap: widget.onTap,
       child: Container(
         decoration: BoxDecoration(
           color: kSuperficieOscura,
           border: Border.all(
-            color: _pelea ? kPeligro : (widget.seleccionada ? kPrimario : kBordeOscuro),
-            width: _pelea || widget.seleccionada ? 2 : 1,
+            color: peleando ? kPeligro : (widget.seleccionada ? kPrimario : kBordeOscuro),
+            width: peleando || widget.seleccionada ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(8),
         ),
@@ -322,7 +415,30 @@ class _CeldaCamaraLocalState extends State<_CeldaCamaraLocal> {
             fit: StackFit.expand,
             children: [
               // Preview cámara trasera
-              if (!_listo)
+              if (_errorCamara != null)
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.videocam_off, color: kPeligro, size: 34),
+                        const SizedBox(height: 8),
+                        Text(
+                          _errorCamara!,
+                          style: const TextStyle(color: Colors.white, fontSize: 12),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 10),
+                        TextButton(
+                          onPressed: _iniciarCamara,
+                          child: const Text('Reintentar'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else if (!_listo)
                 const Center(child: CircularProgressIndicator(color: kPrimario, strokeWidth: 2))
               else
                 CameraPreview(_ctrl!),
@@ -378,60 +494,7 @@ class _CeldaCamaraLocalState extends State<_CeldaCamaraLocal> {
                   ),
                 ),
 
-              // Alerta pelea
-              if (_pelea)
-                Positioned(
-                  bottom: 30, left: 0, right: 0,
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                      margin: const EdgeInsets.only(bottom: 4),
-                      decoration: BoxDecoration(
-                        color: kPeligro.withAlpha(230),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text('⚠ PELEA DETECTADA',
-                        style: TextStyle(
-                          color: Colors.white, fontSize: 11,
-                          fontWeight: FontWeight.w800, letterSpacing: 0.5)),
-                    ),
-                  ),
-                ),
-
-              // Alerta perro sin correa
-              if (_perroSuelto)
-                Positioned(
-                  bottom: _pelea ? 60 : 30, left: 0, right: 0,
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                      margin: const EdgeInsets.only(bottom: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withAlpha(230),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text('🐕 MASCOTA SUELTA',
-                        style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
-                    ),
-                  ),
-                ),
-
-              // Alerta heces
-              if (_heces)
-                Positioned(
-                  bottom: (_pelea ? 60 : 30) + (_perroSuelto ? 30 : 0), left: 0, right: 0,
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: Colors.brown.withAlpha(230),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text('💩 HECES DETECTADAS',
-                        style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
-                    ),
-                  ),
-                ),
+              ..._bannersAlerta(),
             ],
           ),
         ),

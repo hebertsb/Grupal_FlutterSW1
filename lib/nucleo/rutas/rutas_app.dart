@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../proveedores/auth_proveedor.dart';
@@ -14,17 +15,27 @@ import '../../compartido/widgets/diseno_guardia.dart';
 const _rutasAdmin = ['/dashboard', '/reglas', '/auditoria', '/usuarios'];
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final auth = ref.watch(authProvider);
-  final esAdmin = auth.usuario?.esAdmin ?? false;
+  final refreshNotifier = ValueNotifier<bool>(false);
 
-  return GoRouter(
-    initialLocation: esAdmin ? '/dashboard' : '/camaras',
+  // Cuando auth cambia, notifica al GoRouter para re-evaluar redirect
+  ref.listen<EstadoAuth>(authProvider, (_, __) {
+    refreshNotifier.value = !refreshNotifier.value;
+  });
+
+  final router = GoRouter(
+    initialLocation: '/login',
+    refreshListenable: refreshNotifier,
     redirect: (context, state) {
+      // Leer auth FRESCO cada vez (no stale closure)
+      final auth      = ref.read(authProvider);
       final autenticado = auth.autenticado;
-      final enLogin     = state.matchedLocation == '/login';
+      final esAdmin   = auth.usuario?.esAdmin ?? false;
+      final enLogin   = state.matchedLocation == '/login';
+
       if (!autenticado && !enLogin) return '/login';
       if (autenticado  &&  enLogin) return esAdmin ? '/dashboard' : '/camaras';
-      if (autenticado && !esAdmin && _rutasAdmin.any((r) => state.matchedLocation.startsWith(r))) {
+      if (autenticado && !esAdmin &&
+          _rutasAdmin.any((r) => state.matchedLocation.startsWith(r))) {
         return '/camaras';
       }
       return null;
@@ -45,4 +56,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
+
+  ref.onDispose(() {
+    refreshNotifier.dispose();
+    router.dispose();
+  });
+
+  return router;
 });
