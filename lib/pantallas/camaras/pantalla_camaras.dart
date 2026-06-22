@@ -206,6 +206,8 @@ class _CeldaCamaraLocalState extends State<_CeldaCamaraLocal> {
   int     _conteoPersonas = 0;
   String? _nivel;          // 'normal' | 'sospechoso' | 'critico'
   bool    _pelea          = false;
+  bool    _perroSuelto    = false;
+  bool    _heces          = false;
 
   @override
   void initState() {
@@ -257,12 +259,16 @@ class _CeldaCamaraLocalState extends State<_CeldaCamaraLocal> {
         // alertas es lista de strings: ["merodeo", "personas_peleando", ...]
         final alertas = (body['alertas'] as List<dynamic>?) ?? [];
         final pelea   = alertas.contains('personas_peleando');
+        final perroSuelto = alertas.contains('perro_sin_correa');
+        final heces   = alertas.contains('heces_detectadas');
 
         if (mounted) {
           setState(() {
             _conteoPersonas = personas;
             _nivel          = nivel;
             _pelea          = pelea;
+            _perroSuelto    = perroSuelto;
+            _heces          = heces;
           });
         }
       }
@@ -379,6 +385,7 @@ class _CeldaCamaraLocalState extends State<_CeldaCamaraLocal> {
                   child: Center(
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                      margin: const EdgeInsets.only(bottom: 4),
                       decoration: BoxDecoration(
                         color: kPeligro.withAlpha(230),
                         borderRadius: BorderRadius.circular(6),
@@ -387,6 +394,41 @@ class _CeldaCamaraLocalState extends State<_CeldaCamaraLocal> {
                         style: TextStyle(
                           color: Colors.white, fontSize: 11,
                           fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                    ),
+                  ),
+                ),
+
+              // Alerta perro sin correa
+              if (_perroSuelto)
+                Positioned(
+                  bottom: _pelea ? 60 : 30, left: 0, right: 0,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                      margin: const EdgeInsets.only(bottom: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withAlpha(230),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text('🐕 MASCOTA SUELTA',
+                        style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
+                    ),
+                  ),
+                ),
+
+              // Alerta heces
+              if (_heces)
+                Positioned(
+                  bottom: (_pelea ? 60 : 30) + (_perroSuelto ? 30 : 0), left: 0, right: 0,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.brown.withAlpha(230),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text('💩 HECES DETECTADAS',
+                        style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
                     ),
                   ),
                 ),
