@@ -265,7 +265,8 @@ class _CeldaCamaraLocalState extends State<_CeldaCamaraLocal> {
       final req = http.MultipartRequest('POST', uri);
       req.headers['Authorization'] = 'Bearer $token';
       req.files.add(http.MultipartFile.fromBytes('file', bytes, filename: 'frame.jpg'));
-      req.fields['umbral_merodeo'] = '15';
+      req.fields['umbral_merodeo'] = '10';
+      req.fields['modo_filtro']    = 'personas';
 
       final resp = await req.send().timeout(const Duration(seconds: 4));
       final bodyStr = await resp.stream.bytesToString();
