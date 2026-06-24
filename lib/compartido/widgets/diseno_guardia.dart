@@ -89,9 +89,10 @@ class _DisenoGuardiaState extends ConsumerState<DisenoGuardia> {
   int _indiceActual(BuildContext context, bool esAdmin) {
     final location = GoRouterState.of(context).matchedLocation;
     if (esAdmin) {
-      if (location.startsWith('/dashboard')) return 0;
-      if (location.startsWith('/camaras'))   return 1;
-      if (location.startsWith('/eventos'))   return 2;
+      if (location.startsWith('/dashboard'))      return 0;
+      if (location.startsWith('/camaras'))        return 1;
+      if (location.startsWith('/eventos'))        return 2;
+      if (location.startsWith('/notificaciones')) return 3;
       return 0;
     }
     if (location.startsWith('/camaras'))        return 0;
@@ -129,7 +130,6 @@ class _DisenoGuardiaState extends ConsumerState<DisenoGuardia> {
           scaffold!.closeDrawer();
           return;
         }
-        final esAdmin = ref.read(authProvider).usuario?.esAdmin ?? false;
         final accion = await showDialog<String>(
           context: context,
           builder: (ctx) => AlertDialog(
@@ -162,9 +162,10 @@ class _DisenoGuardiaState extends ConsumerState<DisenoGuardia> {
           onDestinationSelected: (i) {
             if (esAdmin) {
               switch (i) {
-                case 0: context.go('/dashboard'); break;
-                case 1: context.go('/camaras');   break;
-                case 2: context.go('/eventos');   break;
+                case 0: context.go('/dashboard');      break;
+                case 1: context.go('/camaras');        break;
+                case 2: context.go('/eventos');        break;
+                case 3: context.go('/notificaciones'); break;
               }
             } else {
               switch (i) {
@@ -190,6 +191,11 @@ class _DisenoGuardiaState extends ConsumerState<DisenoGuardia> {
                     icon:         iconoAlertas(false),
                     selectedIcon: iconoAlertas(true),
                     label: 'Eventos',
+                  ),
+                  NavigationDestination(
+                    icon:         Icon(Icons.mail_outline, color: colorTexto2),
+                    selectedIcon: const Icon(Icons.mail, color: kPrimario),
+                    label: 'Avisos',
                   ),
                 ]
               : [
