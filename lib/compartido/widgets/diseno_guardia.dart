@@ -30,8 +30,23 @@ class _DisenoGuardiaState extends ConsumerState<DisenoGuardia> {
     });
   }
 
+  static const _etiquetas = {
+    'mascota_suelta':           'Mascota Suelta',
+    'heces_detectadas':         'Heces Detectadas',
+    'persona_zona_restringida': 'Zona Restringida',
+    'merodeo':                  'Merodeo Detectado',
+    'vehiculo_no_autorizado':   'Vehículo No Autorizado',
+    'bloqueo_vehicular':        'Vehículo Mal Estacionado',
+    'personas_peleando':        'Pelea Detectada',
+    'caida_persona':            'Caída de Persona',
+    'intrusion_nocturna':       'Intrusión Nocturna',
+    'acceso_fuera_horario':     'Acceso Fuera de Horario',
+    'acceso_no_autorizado':     'Acceso No Autorizado',
+  };
+
   void _mostrarBanner(AlertaWS alerta) {
     if (!mounted) return;
+    final etiqueta = _etiquetas[alerta.reglaNombre] ?? alerta.reglaNombre;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         duration: const Duration(seconds: 5),
@@ -48,7 +63,7 @@ class _DisenoGuardiaState extends ConsumerState<DisenoGuardia> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(alerta.reglaNombre,
+                  Text(etiqueta,
                       style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white)),
                   Text(alerta.camaraNombre,
                       style: const TextStyle(fontSize: 12, color: Colors.white70)),
@@ -114,18 +129,27 @@ class _DisenoGuardiaState extends ConsumerState<DisenoGuardia> {
           scaffold!.closeDrawer();
           return;
         }
-        final salir = await showDialog<bool>(
+        final esAdmin = ref.read(authProvider).usuario?.esAdmin ?? false;
+        final accion = await showDialog<String>(
           context: context,
           builder: (ctx) => AlertDialog(
             title: const Text('Salir'),
-            content: const Text('¿Deseas salir de la aplicación?'),
+            content: const Text('¿Qué deseas hacer?'),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-              TextButton(onPressed: () => Navigator.pop(ctx, true),  child: const Text('Salir')),
+              TextButton(onPressed: () => Navigator.pop(ctx, null),        child: const Text('Cancelar')),
+              TextButton(onPressed: () => Navigator.pop(ctx, 'salir'),     child: const Text('Salir')),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, 'logout'),
+                child: const Text('Cerrar sesión', style: TextStyle(color: Colors.red)),
+              ),
             ],
           ),
         );
-        if (salir ?? false) SystemNavigator.pop();
+        if (accion == 'logout') {
+          await ref.read(authProvider.notifier).cerrarSesion();
+        } else if (accion == 'salir') {
+          SystemNavigator.pop();
+        }
       },
       child: Scaffold(
         key: ref.watch(shellScaffoldKeyProvider),

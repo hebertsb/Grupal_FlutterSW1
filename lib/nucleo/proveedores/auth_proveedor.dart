@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../red/cliente_http.dart';
 import '../red/websocket_servicio.dart';
 import '../../compartido/modelos/usuario.modelo.dart';
@@ -31,6 +32,15 @@ class AuthNotifier extends StateNotifier<EstadoAuth> {
     ));
   }
 
+  Future<void> _enviarTokenFcm() async {
+    try {
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      if (fcmToken != null) {
+        await _http.post('/auth/fcm-token/', data: {'token': fcmToken});
+      }
+    } catch (_) {}
+  }
+
   Future<void> cargarSesionGuardada() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('sivic_token');
@@ -39,6 +49,7 @@ class AuthNotifier extends StateNotifier<EstadoAuth> {
       final resp = await _http.get('/auth/yo/');
       state = EstadoAuth(usuario: Usuario.fromJson(resp.data as Map<String, dynamic>));
       _ref.read(wsProvider.notifier).conectar(token);
+      _enviarTokenFcm();
     } catch (_) {
       await prefs.remove('sivic_token');
     }
@@ -54,6 +65,7 @@ class AuthNotifier extends StateNotifier<EstadoAuth> {
       await prefs.setString('sivic_token', token);
       state = EstadoAuth(usuario: Usuario.fromJson(datos['usuario'] as Map<String, dynamic>));
       _ref.read(wsProvider.notifier).conectar(token);
+      _enviarTokenFcm();
       return true;
     } on DioException catch (e) {
       final data = e.response?.data;

@@ -142,10 +142,25 @@ class WebSocketNotifier extends StateNotifier<EstadoWS> {
     state = state.copyWith(alertas: List.from(state.alertas));
   }
 
+  static const _etiquetas = {
+    'mascota_suelta':           'Mascota Suelta',
+    'heces_detectadas':         'Heces Detectadas',
+    'persona_zona_restringida': 'Zona Restringida',
+    'merodeo':                  'Merodeo Detectado',
+    'vehiculo_no_autorizado':   'Vehículo No Autorizado',
+    'bloqueo_vehicular':        'Vehículo Mal Estacionado',
+    'personas_peleando':        'Pelea Detectada',
+    'caida_persona':            'Caída de Persona',
+    'intrusion_nocturna':       'Intrusión Nocturna',
+    'acceso_fuera_horario':     'Acceso Fuera de Horario',
+    'acceso_no_autorizado':     'Acceso No Autorizado',
+  };
+
   void _mostrarNotifLocal(AlertaWS alerta) {
+    final etiqueta = _etiquetas[alerta.reglaNombre] ?? alerta.reglaNombre;
     _localNotif.show(
       alerta.eventoId,
-      'Alerta: ${alerta.reglaNombre}',
+      '⚠ $etiqueta',
       '${alerta.camaraNombre} • ${(alerta.confianzaIa * 100).toStringAsFixed(0)}% confianza',
       const NotificationDetails(
         android: AndroidNotificationDetails(

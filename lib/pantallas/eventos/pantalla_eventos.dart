@@ -180,6 +180,22 @@ class _TarjetaEvento extends ConsumerWidget {
             Text(_formatearHoraBolivia(evento.timestampDeteccion),
               style: const TextStyle(fontSize: 11, color: kTexto2Oscuro)),
 
+            if (evento.atendidoNombre != null) ...[
+              const SizedBox(height: 4),
+              Row(children: [
+                const Icon(Icons.person, size: 12, color: kTexto2Oscuro),
+                const SizedBox(width: 4),
+                Text('Atendido por: ${evento.atendidoNombre}',
+                  style: const TextStyle(fontSize: 11, color: kTexto2Oscuro)),
+              ]),
+            ],
+            if (evento.resolucion != null && evento.resolucion!.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text('Resolución: ${evento.resolucion}',
+                style: const TextStyle(fontSize: 11, color: kTexto2Oscuro),
+                maxLines: 2, overflow: TextOverflow.ellipsis),
+            ],
+
             if (evento.estado == 'pendiente') ...[
               const SizedBox(height: 10),
               Row(
@@ -191,7 +207,20 @@ class _TarjetaEvento extends ConsumerWidget {
                   _BotonAccion(icono: Icons.check_circle,  etiqueta: 'Resolver', color: kExito,
                     onTap: () => _cambiarEstado(context, ref, 'resuelto')),
                   const SizedBox(width: 8),
-                  _BotonAccion(icono: Icons.cancel,        etiqueta: 'Falso+',  color: kTexto2Oscuro,
+                  _BotonAccion(icono: Icons.cancel,        etiqueta: 'Falso+',   color: kTexto2Oscuro,
+                    onTap: () => _cambiarEstado(context, ref, 'falsa_alarma')),
+                ],
+              ),
+            ],
+            if (evento.estado == 'en_atencion') ...[
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  _BotonAccion(icono: Icons.check_circle, etiqueta: 'Resolver', color: kExito,
+                    onTap: () => _cambiarEstado(context, ref, 'resuelto')),
+                  const SizedBox(width: 8),
+                  _BotonAccion(icono: Icons.cancel,       etiqueta: 'Falso+',   color: kTexto2Oscuro,
                     onTap: () => _cambiarEstado(context, ref, 'falsa_alarma')),
                 ],
               ),

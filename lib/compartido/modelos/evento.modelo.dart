@@ -8,6 +8,8 @@ class Evento {
   final String  timestampDeteccion;
   final String? camaraNombre;
   final String? reglaNombre;
+  final String? atendidoNombre;
+  final String? resolucion;
 
   const Evento({
     required this.eventoId,
@@ -19,6 +21,8 @@ class Evento {
     required this.timestampDeteccion,
     this.camaraNombre,
     this.reglaNombre,
+    this.atendidoNombre,
+    this.resolucion,
   });
 
   factory Evento.fromJson(Map<String, dynamic> json) => Evento(
@@ -31,5 +35,7 @@ class Evento {
     timestampDeteccion:   json['timestamp_deteccion'] as String,
     camaraNombre:         json['camara_nombre'] as String?,
     reglaNombre:          json['regla_nombre'] as String?,
+    atendidoNombre:       json['atendido_nombre'] as String?,
+    resolucion:           json['resolucion'] as String?,
   );
 }

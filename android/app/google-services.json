@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "843912265116",
+    "project_id": "sivic-app-f149a",
+    "storage_bucket": "sivic-app-f149a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:843912265116:android:d406220c569c341e579c59",
+        "android_client_info": {
+          "package_name": "com.smartcondominium.sivic_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAGlrQfcSU5CuCf7Xc2myv1s8piLjrTkPQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
