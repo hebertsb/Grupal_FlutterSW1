@@ -124,10 +124,47 @@ class _TarjetaEvento extends ConsumerWidget {
     _                => kTexto2Oscuro,
   };
 
-  Future<void> _cambiarEstado(BuildContext ctx, WidgetRef ref, String nuevoEstado) async {
-    final http = ref.read(httpProvider);
-    await http.patch('/eventos/${evento.eventoId}/estado/', data: {'estado': nuevoEstado});
-    onActualizar();
+  Future<void> _cambiarEstado(BuildContext ctx, WidgetRef ref, String nuevoEstado, {String? resolucion}) async {
+    try {
+      final http = ref.read(httpProvider);
+      final data = {'estado': nuevoEstado};
+      if (resolucion != null && resolucion.isNotEmpty) data['resolucion'] = resolucion;
+      await http.patch('/eventos/${evento.eventoId}/estado/', data: data);
+      onActualizar();
+    } catch (e) {
+      if (ctx.mounted) {
+        ScaffoldMessenger.of(ctx).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: kPeligro),
+        );
+      }
+    }
+  }
+
+  Future<void> _resolverConTexto(BuildContext ctx, WidgetRef ref) async {
+    final ctrl = TextEditingController();
+    final resolucion = await showDialog<String>(
+      context: ctx,
+      builder: (dctx) => AlertDialog(
+        title: const Text('Resolver evento'),
+        content: TextField(
+          controller: ctrl,
+          decoration: const InputDecoration(
+            hintText: '¿Qué se hizo para resolverlo?',
+          ),
+          maxLines: 3,
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dctx), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(dctx, ctrl.text.trim()),
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
+    if (resolucion == null) return;
+    if (ctx.mounted) await _cambiarEstado(ctx, ref, 'resuelto', resolucion: resolucion);
   }
 
   @override
@@ -205,7 +242,7 @@ class _TarjetaEvento extends ConsumerWidget {
                     onTap: () => _cambiarEstado(context, ref, 'en_atencion')),
                   const SizedBox(width: 8),
                   _BotonAccion(icono: Icons.check_circle,  etiqueta: 'Resolver', color: kExito,
-                    onTap: () => _cambiarEstado(context, ref, 'resuelto')),
+                    onTap: () => _resolverConTexto(context, ref)),
                   const SizedBox(width: 8),
                   _BotonAccion(icono: Icons.cancel,        etiqueta: 'Falso+',   color: kTexto2Oscuro,
                     onTap: () => _cambiarEstado(context, ref, 'falsa_alarma')),
@@ -218,7 +255,7 @@ class _TarjetaEvento extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   _BotonAccion(icono: Icons.check_circle, etiqueta: 'Resolver', color: kExito,
-                    onTap: () => _cambiarEstado(context, ref, 'resuelto')),
+                    onTap: () => _resolverConTexto(context, ref)),
                   const SizedBox(width: 8),
                   _BotonAccion(icono: Icons.cancel,       etiqueta: 'Falso+',   color: kTexto2Oscuro,
                     onTap: () => _cambiarEstado(context, ref, 'falsa_alarma')),
