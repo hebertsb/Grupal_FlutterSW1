@@ -38,7 +38,20 @@ class _AppSivicState extends ConsumerState<AppSivic> {
         badge: true,
         sound: true,
       );
+      // App killed → abierta desde notificación
+      final initial = await FirebaseMessaging.instance.getInitialMessage();
+      if (initial != null) _abrirEventos();
+
+      // App en background → notificación tapeada
+      FirebaseMessaging.onMessageOpenedApp.listen((_) => _abrirEventos());
     });
+  }
+
+  void _abrirEventos() {
+    if (!mounted) return;
+    if (ref.read(authProvider).autenticado) {
+      ref.read(routerProvider).go('/eventos');
+    }
   }
 
   @override
