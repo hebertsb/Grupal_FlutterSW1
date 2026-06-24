@@ -248,11 +248,15 @@ class _CeldaCamaraLocalState extends State<_CeldaCamaraLocal> {
   }
 
   Future<void> _analizarFrame() async {
-    if (_disposed || !_listo || _analizando || _ctrl == null || !_ctrl!.value.isInitialized) return;
+    if (_disposed || !_listo || _analizando) return;
+    final ctrl = _ctrl;
+    if (ctrl == null || !ctrl.value.isInitialized) return;
     _analizando = true;
     try {
-      final foto  = await _ctrl!.takePicture();
+      final foto  = await ctrl.takePicture();
+      if (_disposed) return;
       final bytes = await foto.readAsBytes();
+      if (_disposed) return;
 
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('sivic_token') ?? '';
@@ -390,7 +394,9 @@ class _CeldaCamaraLocalState extends State<_CeldaCamaraLocal> {
   void dispose() {
     _disposed = true;
     _timer?.cancel();
-    _ctrl?.dispose();
+    final ctrl = _ctrl;
+    _ctrl = null;
+    try { ctrl?.dispose(); } catch (_) {}
     super.dispose();
   }
 
